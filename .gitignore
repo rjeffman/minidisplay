@@ -1,0 +1,9 @@
+# python files
+/*.egg-info/
+__pycache__
+
+# temporary files
+*.swp
+
+# some commonly used and not to be added files.
+TODO
