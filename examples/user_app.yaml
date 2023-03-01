@@ -1,0 +1,31 @@
+---
+name: minidisplay-example
+version: 0.1.0
+author: Rafael Guterres Jeffman 
+email: rafasgj@gmail.com
+license: GPL-3.0-or-later
+resolution:
+  simulator_scale: 4
+
+# default_stage_time: 5000
+# screensaver:
+#     after:
+#     timeout:
+#     renderer:
+#     blank:
+# reset: GPIO
+intro:
+  module: user_app.icon
+  time: 5000
+  update: 0   # set update to 0 to disable update.
+# shutdown:
+#   module: icon_function
+#   time: 
+#   trigger: GPIO
+#   update:
+stages:
+  - module: user_app.info
+    time: 3000
+    update: 1000
+    # trigger: GPIO
+...
