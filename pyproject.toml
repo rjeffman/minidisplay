@@ -1,0 +1,45 @@
+[project]
+name = "minidisplay"
+description = "A library and simulator for OLED SSD1360 displays."
+version = "0.1.0"
+licence = { file="COPYING" }
+authors = [
+  { name = "Rafael Guterres Jeffman", email = "rafasgj@gmail.com" },
+]
+keywords = [
+  "embedded",
+  "display",
+  "rapsberry-pi",
+  "ssd1306",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+requires-python = ">=3.9"
+dependencies = [
+  "pillow",
+  "pyyaml"
+]
+
+[project.optional-dependencies]
+raspberry = [
+  "adafruit-circuitpython-busdevice",
+  "adafruit-circuitpython-ssd1306",
+]
+simulator = [
+    "pygame",
+]
+examples = [
+    "psutil",
+]
+
+[project.scripts]
+minidisplay = "minidisplay:main"
+
+[tool.black]
+line-length = 79
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+
