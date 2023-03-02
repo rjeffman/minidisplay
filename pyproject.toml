@@ -2,7 +2,7 @@
 name = "minidisplay"
 description = "A library and simulator for OLED SSD1360 displays."
 version = "0.1.0"
-licence = { file="COPYING" }
+license = { file="COPYING" }
 authors = [
   { name = "Rafael Guterres Jeffman", email = "rafasgj@gmail.com" },
 ]
