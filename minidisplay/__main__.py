@@ -68,11 +68,27 @@ def main():
     configuration.update(vars(options))
     print(configuration)
     module = f"minidisplay.{'simulator' if options.simulator else 'device'}"
-    device_impl = importlib.import_module(f"{module}")
+    try:
+        device_impl = importlib.import_module(f"{module}")
+    except ModuleNotFoundError as mnfe:
+        if (
+            module == "minidisplay.device"
+            and mnfe.name == "board"
+            and not options.simulator
+        ):
+            print(
+                f"{str(mnfe)}\nDid you want to run in simulator mode?",
+                file=sys.stderr
+            )
+        else:
+            print(str(mnfe))
+        return 1
     context = device_impl.init(configuration)
     Application(context, configuration).run()
     device_impl.shutdown(context)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())
