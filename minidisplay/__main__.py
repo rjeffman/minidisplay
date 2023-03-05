@@ -23,6 +23,7 @@ import argparse
 import yaml
 
 from minidisplay.application import Application
+from minidisplay.errors import StageException
 
 
 __VERSION__ = "0.1"
@@ -80,10 +81,14 @@ def main():
                 file=sys.stderr
             )
         else:
-            print(str(mnfe))
+            print(str(mnfe), file=sys.stderr)
         return 1
     context = device_impl.init(configuration)
-    Application(context, configuration).run()
+    try:
+        Application(context, configuration).run()
+    except StageException as stage_ex:
+        print(str(stage_ex), file=sys.stderr)
+        return 1
     device_impl.shutdown(context)
     return 0
 

@@ -21,6 +21,7 @@ import sched
 import importlib
 
 from minidisplay import StageConfiguration, Applet
+from minidisplay.errors import StageException
 
 
 class Application:
@@ -47,6 +48,19 @@ class Application:
         stage_config.update(config)
         # TODO: setup GPIO trigger event.
         return Applet(**stage_config)
+
+    def __validate_stage(self, config):
+        """Ensure stage is valide."""
+        valid_items = ["module", "time", "update", "trigger"]
+        if any(param for param in config.keys() if param not in valid_items):
+            raise StageException("Stage with invalid parameter.")
+        if not config.get("module"):
+            raise StageException("Module not defined for parameter.")
+        if config.get("time", 0) < config.get("update", 0):
+            raise StageException(
+                "Stage time must be at least equal to update."
+            )
+        return True
 
     def __render_applet(self, applet, scheduler):
         if applet is not None:
@@ -75,6 +89,7 @@ class Application:
         applets = [
             self.__init_applet(cfg)
             for cfg in self.configuration.get("stages", [])
+            if self.__validate_stage(cfg)
         ]
         # create stage list
         return StageConfiguration(intro, shutdown, applets)
