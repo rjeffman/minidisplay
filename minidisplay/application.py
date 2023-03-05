@@ -111,5 +111,8 @@ class Application:
     def run(self):
         """Start the application."""
         stages = self.setup()
-        self.loop(stages)
+        try:
+            self.loop(stages)
+        except KeyboardInterrupt:
+            pass
         self.teardown(stages)
