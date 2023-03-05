@@ -5,7 +5,7 @@ author: Rafael Guterres Jeffman
 email: rafasgj@gmail.com
 license: GPL-3.0-or-later
 resolution:
-  simulator_scale: 4
+  scale: 2
 stage_configuration:
   time: 3000
   update: 1000

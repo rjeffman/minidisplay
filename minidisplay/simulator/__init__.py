@@ -31,7 +31,7 @@ def init(configuration):
         "width": 128,
         "height": 64,
         "dpi": 122,
-        "simulator_scale": 2,
+        "scale": 1,
     }
     if isinstance(resolution, dict):
         resolution = tuple(
