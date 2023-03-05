@@ -66,7 +66,6 @@ def main():
     with open(options.configpath, "r") as conffile:  # pylint: disable=W1514
         configuration = yaml.safe_load(conffile)
     configuration.update(vars(options))
-    print(configuration)
     module = f"minidisplay.{'simulator' if options.simulator else 'device'}"
     try:
         device_impl = importlib.import_module(f"{module}")

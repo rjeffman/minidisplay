@@ -35,7 +35,6 @@ class Application:
         module = importlib.import_module(config.get("module"))
         if hasattr(module, "configure"):
             module.configure(self.rendercontext)
-        print("CONFIG:", config)
         # TODO: setup GPIO trigger event.
         return Applet(
             module,
@@ -98,7 +97,6 @@ class Application:
             next_stage += intro.time / 1000
         while True:
             for stage in stages:
-                print("next:", next_stage)
                 scheduler.enter(
                     next_stage, 1, self.__render_applet, (stage, scheduler)
                 )
