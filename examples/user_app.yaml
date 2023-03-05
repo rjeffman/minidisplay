@@ -6,8 +6,9 @@ email: rafasgj@gmail.com
 license: GPL-3.0-or-later
 resolution:
   simulator_scale: 4
-
-# default_stage_time: 5000
+stage_configuration:
+  time: 3000
+  update: 1000
 # screensaver:
 #     after:
 #     timeout:
@@ -25,7 +26,5 @@ intro:
 #   update:
 stages:
   - module: user_app.info
-    time: 3000
-    update: 1000
     # trigger: GPIO
 ...

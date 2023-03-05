@@ -35,13 +35,17 @@ class Application:
         module = importlib.import_module(config.get("module"))
         if hasattr(module, "configure"):
             module.configure(self.rendercontext)
+        stage_config = {
+            "module": module,
+            "time": 2000,
+            "update": 1000 / 60,  # 1/60s
+            "trigger": None
+        }
+        stage_config.update(self.configuration.get("stage_configuration", {}))
+        del config["module"]
+        stage_config.update(config)
         # TODO: setup GPIO trigger event.
-        return Applet(
-            module,
-            config.get("time", 2000),
-            config.get("update", 1000 / 60),
-            config.get("trigger"),
-        )
+        return Applet(**stage_config)
 
     def __render_applet(self, applet, scheduler):
         if applet is not None:
