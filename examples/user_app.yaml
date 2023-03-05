@@ -19,11 +19,11 @@ intro:
   module: user_app.icon
   time: 5000
   update: 0   # set update to 0 to disable update.
-# shutdown:
-#   module: icon_function
-#   time: 
+shutdown:
+  module: user_app.icon
+  time: 2000
+  update: 0   # set update to 0 to disable update.
 #   trigger: GPIO
-#   update:
 stages:
   - module: user_app.info
     # trigger: GPIO

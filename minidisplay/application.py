@@ -99,24 +99,34 @@ class Application:
                 next_stage, 1, self.__render_applet, (intro, scheduler)
             )
             next_stage += intro.time / 1000
-        while True:
-            for stage in stages:
-                scheduler.enter(
-                    next_stage, 1, self.__render_applet, (stage, scheduler)
-                )
-                next_stage += stage.time / 1000
-            scheduler.run()
-            next_stage = stages[-1].time / 1000
+
+        try:
+            while True:
+                for stage in stages:
+                    scheduler.enter(
+                        next_stage, 1, self.__render_applet, (stage, scheduler)
+                    )
+                    next_stage += stage.time / 1000
+                scheduler.run()
+                next_stage = stages[-1].time / 1000
+        except KeyboardInterrupt:
+            pass
         # Call shutdown
         if shutdown is not None:
             # render shutdown and exit function.
-            pass
+            scheduler = sched.scheduler()
+            scheduler.enter(
+                0, 1, self.__render_applet, (shutdown, scheduler)
+            )
+            scheduler.enter(
+                shutdown.time / 1000,
+                1,
+                lambda: None,
+            )
+            scheduler.run()
 
     def run(self):
         """Start the application."""
         stages = self.setup()
-        try:
-            self.loop(stages)
-        except KeyboardInterrupt:
-            pass
+        self.loop(stages)
         self.teardown(stages)
