@@ -30,6 +30,7 @@ class Application:
         """Initialize application's render context and configuration."""
         self.rendercontext = rendercontext
         self.configuration = configuration
+        self.scheduled_events = []
 
     def __init_applet(self, config):
         module = importlib.import_module(config.get("module"))
@@ -53,11 +54,13 @@ class Application:
             applet.module.render(self.rendercontext)
             self.rendercontext.display.update()
             if applet.update:
-                scheduler.enter(
-                    applet.update / 1000,
-                    1,
-                    self.__render_applet,
-                    (applet, scheduler),
+                self.scheduled_events.append(
+                    scheduler.enter(
+                        applet.update / 1000,
+                        1,
+                        self.__render_applet,
+                        (applet, scheduler),
+                    )
                 )
 
     def setup(self):
@@ -93,37 +96,49 @@ class Application:
         scheduler = sched.scheduler()
         # Prepare environment
         next_stage = 0
-        # Call intro.
+        # Schedule intro.
         if intro is not None:
-            scheduler.enter(
-                next_stage, 1, self.__render_applet, (intro, scheduler)
+            self.scheduled_events.append(
+                scheduler.enter(
+                    next_stage, 1, self.__render_applet, (intro, scheduler)
+                )
             )
             next_stage += intro.time / 1000
-
+        # Schedule stages
+        for stage in stages:
+            self.scheduled_events.append(
+                scheduler.enter(
+                    next_stage, 1, self.__render_applet, (stage, scheduler)
+                )
+            )
+            next_stage += stage.time / 1000
         try:
-            while True:
-                for stage in stages:
-                    scheduler.enter(
-                        next_stage, 1, self.__render_applet, (stage, scheduler)
-                    )
-                    next_stage += stage.time / 1000
-                scheduler.run()
-                next_stage = stages[-1].time / 1000
+            scheduler.run()
         except KeyboardInterrupt:
-            pass
+            self.__clear_events(scheduler)
         # Call shutdown
         if shutdown is not None:
-            # render shutdown and exit function.
-            scheduler = sched.scheduler()
-            scheduler.enter(
-                0, 1, self.__render_applet, (shutdown, scheduler)
+            # render shutdown
+            self.scheduled_events.append(
+                scheduler.enter(
+                    0, 1, self.__render_applet, (shutdown, scheduler)
+                )
             )
-            scheduler.enter(
-                shutdown.time / 1000,
-                1,
-                lambda: None,
+            self.scheduled_events.append(
+                scheduler.enter(
+                    shutdown.time / 1000, 1, self.__clear_events, (scheduler,)
+                )
             )
             scheduler.run()
+
+    def __clear_events(self, scheduler):
+        """Clear all scheduled events."""
+        for event in self.scheduled_events:
+            try:
+                scheduler.cancel(event)
+            except ValueError:
+                pass
+
 
     def run(self):
         """Start the application."""
