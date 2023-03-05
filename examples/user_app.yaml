@@ -27,4 +27,7 @@ shutdown:
 stages:
   - module: user_app.info
     # trigger: GPIO
+  - module: user_app.icon
+    time: 1000
+    update: 0
 ...

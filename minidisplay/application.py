@@ -62,20 +62,53 @@ class Application:
             )
         return True
 
-    def __render_applet(self, applet, scheduler):
+    def __render_applet(self, applet):
+        self.rendercontext.display.clear()
+        applet.module.render(self.rendercontext)
+        self.rendercontext.display.update()
+
+    def __update_applet(self, applet, scheduler):
+        self.__render_applet(applet)
+        self.scheduled_events.append(
+            scheduler.enter(
+                applet.update / 1000,
+                1,
+                self.__update_applet,
+                (applet, scheduler),
+            )
+        )
+
+    def __schedule_applet(self, applet, scheduler):
         if applet is not None:
-            self.rendercontext.display.clear()
-            applet.module.render(self.rendercontext)
-            self.rendercontext.display.update()
+            for event in scheduler.queue:
+                if event.action == self.__update_applet:
+                    scheduler.cancel(event)
+            self.__render_applet(applet)
             if applet.update:
                 self.scheduled_events.append(
                     scheduler.enter(
                         applet.update / 1000,
                         1,
-                        self.__render_applet,
+                        self.__update_applet,
                         (applet, scheduler),
                     )
                 )
+
+    def __clear_events(self, scheduler):
+        """Clear all scheduled events."""
+        for event in scheduler.queue:
+            scheduler.cancel(event)
+
+    def __schedule_stages(self, scheduler, stages, next_stage=0):
+        """Schedule stages to be executed."""
+        for stage in stages:
+            self.scheduled_events.append(
+                scheduler.enter(
+                    next_stage, 1, self.__schedule_applet, (stage, scheduler)
+                )
+            )
+            next_stage += stage.time / 1000
+        return stages[-1].time / 1000
 
     def setup(self):
         """Prepare for execution."""
@@ -115,20 +148,15 @@ class Application:
         if intro is not None:
             self.scheduled_events.append(
                 scheduler.enter(
-                    next_stage, 1, self.__render_applet, (intro, scheduler)
+                    next_stage, 1, self.__schedule_applet, (intro, scheduler)
                 )
             )
             next_stage += intro.time / 1000
         # Schedule stages
-        for stage in stages:
-            self.scheduled_events.append(
-                scheduler.enter(
-                    next_stage, 1, self.__render_applet, (stage, scheduler)
-                )
-            )
-            next_stage += stage.time / 1000
         try:
-            scheduler.run()
+            while True:
+                next_stage = self.__schedule_stages(scheduler, stages, next_stage)
+                scheduler.run()
         except KeyboardInterrupt:
             self.__clear_events(scheduler)
         # Call shutdown
@@ -136,7 +164,7 @@ class Application:
             # render shutdown
             self.scheduled_events.append(
                 scheduler.enter(
-                    0, 1, self.__render_applet, (shutdown, scheduler)
+                    0, 1, self.__schedule_applet, (shutdown, scheduler)
                 )
             )
             self.scheduled_events.append(
@@ -145,15 +173,6 @@ class Application:
                 )
             )
             scheduler.run()
-
-    def __clear_events(self, scheduler):
-        """Clear all scheduled events."""
-        for event in self.scheduled_events:
-            try:
-                scheduler.cancel(event)
-            except ValueError:
-                pass
-
 
     def run(self):
         """Start the application."""
