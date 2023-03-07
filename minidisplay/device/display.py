@@ -29,7 +29,7 @@ class I2CDisplay(BaseDisplay):
 
     # write_text and draw_image don't need to be overriden.
 
-    def __init__(self, width=128, height=64, address=0x3c, reset=None):
+    def __init__(self, width=128, height=64, address=0x3C, reset=None):
         """Initialize I2C display."""
         super().__init__(width, height)
         i2c = busio.I2C(board.SCL, board.SDA)

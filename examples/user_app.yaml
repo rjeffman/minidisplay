@@ -9,11 +9,10 @@ resolution:
 stage_configuration:
   time: 3000
   update: 1000
-# screensaver:
-#     after:
-#     timeout:
-#     renderer:
-#     blank:
+screensaver:
+    after: 1    # minutes
+    timeout: 1  # minutes
+#     trigger:    # GPIO
 # reset: GPIO
 intro:
   module: user_app.icon

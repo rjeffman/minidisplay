@@ -78,7 +78,7 @@ def main():
         ):
             print(
                 f"{str(mnfe)}\nDid you want to run in simulator mode?",
-                file=sys.stderr
+                file=sys.stderr,
             )
         else:
             print(str(mnfe), file=sys.stderr)
@@ -95,4 +95,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

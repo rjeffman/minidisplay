@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this software.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Example app: stage"""
+"""Example app: data stage."""
 
 import psutil
 from user_app import network, storage  # pylint: disable=import-error

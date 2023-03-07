@@ -31,7 +31,6 @@ class Application:
         """Initialize application's render context and configuration."""
         self.rendercontext = rendercontext
         self.configuration = configuration
-        self.scheduled_events = []
 
     def __init_applet(self, config):
         module = importlib.import_module(config.get("module"))
@@ -41,7 +40,7 @@ class Application:
             "module": module,
             "time": 2000,
             "update": 1000 / 60,  # 1/60s
-            "trigger": None
+            "trigger": None,
         }
         stage_config.update(self.configuration.get("stage_configuration", {}))
         del config["module"]
@@ -69,29 +68,29 @@ class Application:
 
     def __update_applet(self, applet, scheduler):
         self.__render_applet(applet)
-        self.scheduled_events.append(
-            scheduler.enter(
-                applet.update / 1000,
-                1,
-                self.__update_applet,
-                (applet, scheduler),
-            )
+        scheduler.enter(  # miliseconds
+            applet.update / 1000,
+            1,
+            self.__update_applet,
+            (applet, scheduler),
         )
 
     def __schedule_applet(self, applet, scheduler):
         if applet is not None:
+            # Clear all pending update events as we want only the
+            # current applet to update.
             for event in scheduler.queue:
-                if event.action == self.__update_applet:
+                if event.action is self.__update_applet:
                     scheduler.cancel(event)
+            # Render applet.
             self.__render_applet(applet)
+            # Schedule applet update
             if applet.update:
-                self.scheduled_events.append(
-                    scheduler.enter(
-                        applet.update / 1000,
-                        1,
-                        self.__update_applet,
-                        (applet, scheduler),
-                    )
+                scheduler.enter(
+                    applet.update / 1000,  # miliseconds
+                    1,
+                    self.__update_applet,
+                    (applet, scheduler),
                 )
 
     def __clear_events(self, scheduler):
@@ -102,13 +101,28 @@ class Application:
     def __schedule_stages(self, scheduler, stages, next_stage=0):
         """Schedule stages to be executed."""
         for stage in stages:
-            self.scheduled_events.append(
-                scheduler.enter(
-                    next_stage, 1, self.__schedule_applet, (stage, scheduler)
-                )
+            scheduler.enter(
+                next_stage, 1, self.__schedule_applet, (stage, scheduler)
             )
             next_stage += stage.time / 1000
-        return stages[-1].time / 1000
+        # Reschedule stages once all stages are done.
+        scheduler.enter(
+            next_stage, 10, self.__schedule_stages, (scheduler, stages)
+        )
+
+    def __screen_saver(self, screen_saver, scheduler):
+        def blank_screen():
+            self.rendercontext.display.clear()
+            self.rendercontext.display.update()
+
+        self.__clear_events(scheduler)
+        scheduler.enter(0, 10, blank_screen)
+        scheduler.enter(
+            screen_saver.get("timeout", 10) * 60,  # minutes
+            10,
+            lambda: None,
+        )
+        scheduler.run(blocking=False)
 
     def setup(self):
         """Prepare for execution."""
@@ -144,34 +158,42 @@ class Application:
         scheduler = sched.scheduler()
         # Prepare environment
         next_stage = 0
+        screen_saver = self.configuration.get("screensaver")
         # Schedule intro.
         if intro is not None:
-            self.scheduled_events.append(
-                scheduler.enter(
-                    next_stage, 1, self.__schedule_applet, (intro, scheduler)
-                )
+            scheduler.enter(
+                next_stage, 1, self.__schedule_applet, (intro, scheduler)
             )
             next_stage += intro.time / 1000
-        # Schedule stages
+        # Main Loop
         try:
             while True:
-                next_stage = self.__schedule_stages(scheduler, stages, next_stage)
-                scheduler.run()
+                scheduler.run(blocking=True)
+                # Schedule stages
+                self.__schedule_stages(scheduler, stages, next_stage)
+                # Schedule screen saver
+                if screen_saver:
+                    scheduler.enter(
+                        screen_saver["after"] * 60,  # minutes
+                        1,
+                        self.__screen_saver,
+                        (
+                            screen_saver,
+                            scheduler,
+                        ),
+                    )
         except KeyboardInterrupt:
             self.__clear_events(scheduler)
         # Call shutdown
         if shutdown is not None:
             # render shutdown
-            self.scheduled_events.append(
-                scheduler.enter(
-                    0, 1, self.__schedule_applet, (shutdown, scheduler)
-                )
+            self.__clear_events(scheduler)
+            scheduler.enter(
+                0, 1, self.__schedule_applet, (shutdown, scheduler)
             )
-            self.scheduled_events.append(
-                scheduler.enter(
-                    shutdown.time / 1000, 1, self.__clear_events, (scheduler,)
-                )
-            )
+            # Allow shutdown applet to display.
+            scheduler.enter(shutdown.time / 1000, 1, lambda: None)
+            # run shudown applet
             scheduler.run()
 
     def run(self):
